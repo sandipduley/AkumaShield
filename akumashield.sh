@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Bash (ANSI) color codes
+# --- Bash (ANSI) color codes ---
 RED="\e[31m"
 GREEN="\e[32m"
 # YELLOW="\e[33m"
@@ -17,7 +17,7 @@ ${RED}▐  ▌▐ ▚ ▝▄▜ ▐▐▐ ▝▄▜ ▝▄▟▘▐ ▐ ▗▟�
 echo "AkumaShield — not yet another one-off hardening script"
 echo "Author: Sandip Duley"
 
-check_root() {
+check_root_privilege() {
 	if [ "$EUID" -ne 0 ]; then
 		echo -e "\n${RED}[X] AkumaShield must be run with sudo...${RESET}"
 		exit 1
@@ -25,7 +25,7 @@ check_root() {
 		echo -e "\n${GREEN}[✓]Running as root...${RESET}"
 	fi
 }
-check_root
+check_root_privilege
 
 chmod +x modules/users.sh
 

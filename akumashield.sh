@@ -22,13 +22,16 @@ check_root_privilege() {
 		echo -e "\n${RED}[X] AkumaShield must be run with sudo...${RESET}"
 		exit 1
 	else
-		echo -e "\n${GREEN}[✓]Running as root...${RESET}"
+		echo -e "\n${GREEN}[✓] Running as root...${RESET}"
 	fi
 }
 check_root_privilege
 
-chmod +x modules/users.sh
+chmod +x modules/*
 
 # --- Saves the path and run the module ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "$SCRIPT_DIR/modules/users.sh"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$SCRIPT_DIR/modules/permissions.sh"

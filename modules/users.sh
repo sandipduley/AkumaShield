@@ -7,7 +7,7 @@ YELLOW="\e[33m"
 # BLUE="\e[34m"
 RESET="\e[0m"
 
-check_passwd_users() {
+check_non_system_users() {
 	echo -e "\n${GREEN}[X]Checking malicious users on /etc/passwd file....${RESET}"
 
 	echo -e "${GREEN}[X]Printing non system users from /etc/passwd file Username, UID, Shell\n${RESET}"
@@ -18,4 +18,4 @@ check_passwd_users() {
 
 	echo -e "\n${YELLOW}[!]If any unknown users/backdoor are found, remove them immediately.${RESET}"
 }
-check_passwd_users
+check_non_system_users

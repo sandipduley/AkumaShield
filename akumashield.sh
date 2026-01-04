@@ -19,7 +19,7 @@ echo "Author: Sandip Duley"
 
 check_root_privilege() {
 	if [ "$EUID" -ne 0 ]; then
-		echo -e "\n${RED}[X] AkumaShield must be run with sudo...${RESET}"
+		echo -e "\n${RED}[X] AkumaShield must be run with sudo. Before running with elevated privileges, review the source code.${RESET}"
 		exit 1
 	else
 		echo -e "\n${GREEN}[✓] Running as root...${RESET}"

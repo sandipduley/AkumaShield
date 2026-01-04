@@ -9,18 +9,43 @@ RESET="\e[0m"
 check_shadow_permission() {
 	local file="/etc/shadow"
 	local permission
-	permission=$(stat -c "%a" "$file")
+	permission=$(stat -c "%a" "${file}")
 
-	echo -e "\n${GREEN}[X] Checking shadow file permission....${RESET}"
+	echo -e "\n${GREEN}[X] Checking ${file} permissions....${RESET}"
 
 	if [[ ${permission} -eq 600 ]]; then
 		echo -e "\n${file} permissions is secure (${permission})"
 	else
-		echo -e "${YELLOW}[WARN] /etc/shadow permissions appear to be tampered with (${permission}${RESET})"
+		echo -e "${YELLOW}[WARN] ${file} permissions appear to be tampered with (${permission})${RESET}"
 
 		chmod 600 /etc/shadow
-		permission=$(stat -c "%a" "$file")
-		echo "[FIXED] ${file} permissions set to ${permission}"
+		permission=$(stat -c "%a" "${file}")
+
+		echo -e "[FIXED] ${file} permissions set to (${permission})"
 	fi
 }
 check_shadow_permission
+
+echo "======================================================================"
+
+check_passwd_permission() {
+	local file="/etc/passwd"
+	local permission
+	permission=$(stat -c "%a" "${file}")
+
+	echo -e "\n${GREEN}[X] Checking ${file} permissions....${RESET}"
+
+	if [[ ${permission} -eq 644 ]]; then
+		echo -e "\n${file} permission is secure (${permission})"
+	else
+		echo -e "${YELLOW}[WARN] ${file} permissions appear to be tampered with (${permission})${RESET}"
+
+		chmod 644 /etc/passwd
+		permission=$(stat -c "%a" "${file}")
+
+		echo "[FIXED] ${file} permission set to (${permission})"
+	fi
+}
+check_passwd_permission
+
+echo "======================================================================"

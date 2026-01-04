@@ -29,10 +29,13 @@ check_passwd_ownership() {
 	local passwd_owner
 	passwd_owner=$(stat -c "%U" "${passwd_file}")
 
+	loacl passwd_group
+	passwd_group=$(stat -c "%G" "${passwd_file}")
+
 	echo -e "\n${GREEN}[X] Checking ${passwd_file} file ownership....${RESET}"
 
-	if [[ ${passwd_owner} == root ]]; then
-		echo -e "\n${passwd_file} file is secure default (${passwd_owner})"
+	if [[ ${passwd_owner} && ${passwd_group} == root ]]; then
+		echo -e "\n${passwd_file} file is secure default (${passwd_owner}:${passwd_group})"
 	else
 		echo -e "${YELLOW}[WARN] Someone messed with the ${passwd_file} file ownership (${passwd_owner})${RESET}"
 

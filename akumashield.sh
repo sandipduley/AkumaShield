@@ -3,8 +3,6 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/lib/colors"
-source "${SCRIPT_DIR}/modules/system/passwd"
-source "${SCRIPT_DIR}/modules/system/shadow"
 
 BANNER=$(
 	cat <<-EOF
@@ -92,3 +90,7 @@ if [[ "${RUN_MODE}" != true ]]; then
 	echo "Use -h or --help to see available options."
 	exit 1
 fi
+
+source "${SCRIPT_DIR}/modules/system/passwd"
+source "${SCRIPT_DIR}/modules/system/shadow"
+# source "${SCRIPT_DIR}/modules/system/group"

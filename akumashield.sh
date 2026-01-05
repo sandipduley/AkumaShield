@@ -23,7 +23,6 @@ RUN_MODE=false
 FIX_MODE=false
 DRY_RUN=false
 NO_COLOR=false
-AUTO_YES=false
 ONLY_MODULES=""
 
 for arg in "$@"; do
@@ -43,9 +42,6 @@ for arg in "$@"; do
 		;;
 	--no-color)
 		NO_COLOR=true
-		;;
-	--yes)
-		AUTO_YES=true
 		;;
 	--only=*)
 		ONLY_MODULES="${arg#*=}"
@@ -77,7 +73,6 @@ Options:
   --only=MODULES       Run only specific modules (comma-separated)
                        Example: --only=passwd,shadow
   --no-color           Disable colored output
-  --yes                Skip confirmation prompts
   -h, --help           Show this help message
 
 Examples:
@@ -88,7 +83,7 @@ Examples:
 EOF
 }
 
-if [[ "${SHOW_HELP}" == true || "$#" -eq 0 ]]; then
+if [[ "${SHOW_HELP}" == true ]]; then
 	print_help
 	exit 0
 fi

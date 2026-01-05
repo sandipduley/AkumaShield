@@ -16,7 +16,7 @@ BANNER=$(
 )
 echo -e "${Red}${BANNER}${Reset}\n"
 echo -e "${Cyan}AkumaShield${Reset} — not yet another one-off hardening script"
-echo -e "${Cyan}Author${Reset}: Sandip Duley"
+echo -e "${Cyan}Author${Reset}: Sandip Duley\n"
 
 SHOW_HELP=false
 RUN_MODE=false
@@ -66,7 +66,7 @@ export ONLY_MODULES
 
 print_help() {
 	cat <<EOF
-Usage: ./akumashield.sh [OPTIONS]
+Usage: sudo ./akumashield.sh [OPTIONS]
 
 Execution modes:
   --audit              Run security audit only (no changes)
@@ -81,34 +81,23 @@ Options:
   -h, --help           Show this help message
 
 Examples:
-  ./akumashield.sh --audit
-  ./akumashield.sh --fix --yes
-  ./akumashield.sh --fix --dry-run
-  ./akumashield.sh --audit --only=passwd
+ sudo ./akumashield.sh --audit
+ sudo ./akumashield.sh --fix --yes
+ sudo ./akumashield.sh --fix --dry-run
+ sudo ./akumashield.sh --audit --only=passwd
 EOF
 }
 
-if [[ "$SHOW_HELP" == true || "$#" -eq 0 ]]; then
+if [[ "${SHOW_HELP}" == true || "$#" -eq 0 ]]; then
 	print_help
 	exit 0
 fi
 
-if [[ "$RUN_MODE" != true ]]; then
+if [[ "${RUN_MODE}" != true ]]; then
 	echo "[!] No execution mode selected."
 	echo "Use -h or --help to see available options."
 	exit 1
 fi
 
-#
-# check_root_privilege() {
-# 	if [ "${EUID}" -ne 0 ]; then
-# 		echo -e "\n${Red}[X] AkumaShield must be run with sudo. Before running with elevated privileges, review the source code.${Reset}"
-# 		exit 1
-# 	else
-# 		echo -e "\n${Green}[✓] Running as root...${Reset}"
-# 	fi
-# }
-# check_root_privilege
-#
-# chmod +x "${SCRIPT_DIR}/modules/system/passwd.sh"
-# source "${SCRIPT_DIR}/modules/system/passwd.sh"
+chmod +x "${SCRIPT_DIR}/modules/system/passwd.sh"
+source "${SCRIPT_DIR}/modules/system/passwd.sh"

@@ -8,7 +8,7 @@ check_passwd_permission() {
 	local permission
 	permission=$(stat -c "%a" "${passwd_file}")
 
-	echo -e "\n${Green}[X] Checking ${passwd_file} file permissions....${Reset}"
+	echo -e "${Green}[X] Checking ${passwd_file} file permissions....${Reset}"
 
 	if [[ ${permission} == 644 ]]; then
 		echo -e "\n[✓] ${passwd_file} file permission is secure default (${permission})"

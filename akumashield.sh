@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 source "${SCRIPT_DIR}/lib/colors.sh"
 
 BANNER=$(
@@ -18,6 +19,7 @@ echo -e "${Red}${BANNER}${Reset}\n"
 echo -e "${Cyan}AkumaShield${Reset} — not yet another one-off hardening script"
 echo -e "${Cyan}Author${Reset}: Sandip Duley\n"
 
+# Global execution flags controlling help display, run mode, fixing behavior, safety, output formatting, and user interaction
 SHOW_HELP=false
 RUN_MODE=false
 FIX_MODE=false
@@ -25,27 +27,20 @@ DRY_RUN=false
 NO_COLOR=false
 ONLY_MODULES=""
 
+# Parsing Arguments
 for arg in "$@"; do
 	case "$arg" in
-	-h | --help)
-		SHOW_HELP=true
-		;;
-	--audit)
-		RUN_MODE=true
-		;;
-	--fix)
-		RUN_MODE=true
-		FIX_MODE=true
-		;;
-	--dry-run)
-		DRY_RUN=true
-		;;
-	--no-color)
-		NO_COLOR=true
-		;;
-	--only=*)
-		ONLY_MODULES="${arg#*=}"
-		;;
+	-h | --help) SHOW_HELP=true ;;
+
+	--audit) RUN_MODE=true ;;
+
+	--fix) RUN_MODE=true FIX_MODE=true ;;
+
+	--dry-run) DRY_RUN=true ;;
+
+	--no-color) NO_COLOR=true ;;
+
+	--only=*) ONLY_MODULES="${arg#*=}" ;;
 	*)
 		echo "[!] Unknown option: $arg"
 		echo "Use -h or --help to see available options."
@@ -54,6 +49,7 @@ for arg in "$@"; do
 	esac
 done
 
+# Export global execution flags and module filters for use across all AkumaShield modules
 export FIX_MODE
 export DRY_RUN
 export NO_COLOR
@@ -80,6 +76,7 @@ Examples:
  sudo ./akumashield.sh --fix --yes
  sudo ./akumashield.sh --fix --dry-run
  sudo ./akumashield.sh --audit --only=passwd
+
 EOF
 }
 
@@ -94,5 +91,4 @@ if [[ "${RUN_MODE}" != true ]]; then
 	exit 1
 fi
 
-chmod +x "${SCRIPT_DIR}/modules/system/passwd.sh"
 source "${SCRIPT_DIR}/modules/system/passwd.sh"

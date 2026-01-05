@@ -1,6 +1,3 @@
-# Reset
-Color_Off='\033[0m' # Text Reset
-
 # Regular
 Black='\033[0;30m'
 Red='\033[0;31m'
@@ -20,3 +17,5 @@ BBlue='\033[1;34m'
 BPurple='\033[1;35m'
 BCyan='\033[1;36m'
 BWhite='\033[1;37m'
+
+Reset='\033[0m'

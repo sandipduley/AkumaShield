@@ -1,37 +1,27 @@
 #!/usr/bin/env bash
 
-# --- Bash (ANSI) color codes ---
-RED="\e[31m"
-GREEN="\e[32m"
-# YELLOW="\e[33m"
-# BLUE="\e[34m"
-RESET="\e[0m"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+chmod +x "${SCRIPT_DIR}/lib/colors.sh"
+source "${SCRIPT_DIR}/lib/colors.sh"
 
 echo -e "                                            
-${RED} ▗▖ ▐                ▄▄ ▐    ▝      ▝▜    ▐ ${RESET} 
-${RED} ▐▌ ▐ ▗ ▗ ▗ ▗▄▄  ▄▖ ▐▘ ▘▐▗▖ ▗▄   ▄▖  ▐   ▄▟ ${RESET} 
-${RED} ▌▐ ▐▗▘ ▐ ▐ ▐▐▐ ▝ ▐ ▝▙▄ ▐▘▐  ▐  ▐▘▐  ▐  ▐▘▜ ${RESET} 
-${RED} ▙▟ ▐▜  ▐ ▐ ▐▐▐ ▗▀▜   ▝▌▐ ▐  ▐  ▐▀▀  ▐  ▐ ▐ ${RESET} 
-${RED}▐  ▌▐ ▚ ▝▄▜ ▐▐▐ ▝▄▜ ▝▄▟▘▐ ▐ ▗▟▄ ▝▙▞  ▝▄ ▝▙█ ${RESET} 
+${Red} ▗▖ ▐                ▄▄ ▐    ▝      ▝▜    ▐ ${Reset} 
+${Red} ▐▌ ▐ ▗ ▗ ▗ ▗▄▄  ▄▖ ▐▘ ▘▐▗▖ ▗▄   ▄▖  ▐   ▄▟ ${Reset} 
+${Red} ▌▐ ▐▗▘ ▐ ▐ ▐▐▐ ▝ ▐ ▝▙▄ ▐▘▐  ▐  ▐▘▐  ▐  ▐▘▜ ${Reset} 
+${Red} ▙▟ ▐▜  ▐ ▐ ▐▐▐ ▗▀▜   ▝▌▐ ▐  ▐  ▐▀▀  ▐  ▐ ▐ ${Reset} 
+${Red}▐  ▌▐ ▚ ▝▄▜ ▐▐▐ ▝▄▜ ▝▄▟▘▐ ▐ ▗▟▄ ▝▙▞  ▝▄ ▝▙█ ${Reset} 
 "
-echo "AkumaShield — not yet another one-off hardening script"
+echo -e "${Cyan}AkumaShield${Reset} — not yet another one-off hardening script"
 echo "Author: Sandip Duley"
 
 check_root_privilege() {
 	if [ "$EUID" -ne 0 ]; then
-		echo -e "\n${RED}[X] AkumaShield must be run with sudo. Before running with elevated privileges, review the source code.${RESET}"
+		echo -e "\n${Red}[X] AkumaShield must be run with sudo. Before running with elevated privileges, review the source code.${Reset}"
 		exit 1
 	else
-		echo -e "\n${GREEN}[✓] Running as root...${RESET}"
+		echo -e "\n${Green}[✓] Running as root...${Reset}"
 	fi
 }
 check_root_privilege
 
 chmod +x modules/*
-
-# --- Saves the path and run the module ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$SCRIPT_DIR/modules/users.sh"
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$SCRIPT_DIR/modules/permissions.sh"

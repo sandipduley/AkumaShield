@@ -93,4 +93,4 @@ fi
 
 source "${SCRIPT_DIR}/modules/system/passwd"
 source "${SCRIPT_DIR}/modules/system/shadow"
-# source "${SCRIPT_DIR}/modules/system/group"
+source "${SCRIPT_DIR}/modules/system/group"

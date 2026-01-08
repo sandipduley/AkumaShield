@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source "${SCRIPT_DIR}/lib/colors"
+
+readonly group_file="/etc/group"
+
+check_gid_zero_groups() {
+	echo -e "\n${Green}[X] Checking for GID 0 groups....${Reset}"
+
+	gid0_count=$(awk -F: '$3 == 0 {c++} END {print c+0}' "$group_file")
+
+	if [[ "${gid0_count}" -eq 0 ]]; then
+		echo -e "${Red}[CRITICAL] No GID 0 group found! System is misconfigured.${Reset}"
+		return
+	fi
+
+	if [[ "${gid0_count}" -gt 1 ]]; then
+		echo -e "${Red}[CRITICAL] Multiple GID 0 groups detected (${gid0_count})${Reset}"
+		awk -F: '$3 == 0 {print " - " $1}' "$group_file"
+	fi
+
+	non_root_gid0=$(awk -F: '$3 == 0 && $1 != "root" {found=1} END {print found+0}' "$group_file")
+
+	if [[ "${non_root_gid0}" -eq 1 ]]; then
+		awk -F: -v RED="$Red" -v RESET="$Reset" '
+        $3 == 0 && $1 != "root" {
+            print RED "[CRITICAL] Non-root group with GID 0: " RESET $1
+        }' "$group_file"
+	else
+		echo -e "[✓] Only root group has GID 0. No issues found."
+	fi
+
+	echo "-------------------------------------------------------------------------"
+}
+check_gid_zero_groups

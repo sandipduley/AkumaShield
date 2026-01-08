@@ -2,9 +2,16 @@
 
 source "${SCRIPT_DIR}/lib/colors"
 
-readonly group_file="/etc/group"
+run_group_module() {
+	check_gid_zero_groups
+	check_group_file_security
+	check_wheel_group_members
+	check_privileged_groups
+}
 
 check_gid_zero_groups() {
+	local group_file="/etc/group"
+
 	echo -e "\n${Green}[X] Checking for GID 0 groups....${Reset}"
 
 	gid0_count=$(awk -F: '$3 == 0 {c++} END {print c+0}' "$group_file")
@@ -30,6 +37,89 @@ check_gid_zero_groups() {
 		echo -e "[✓] Only root group has GID 0. No issues found."
 	fi
 
-	echo "-------------------------------------------------------------------------"
 }
-check_gid_zero_groups
+
+check_group_file_security() {
+	local group_file="/etc/group"
+
+	local permission owner
+	permission=$(stat -c "%a" ${group_file})
+	owner=$(stat -c "%U:%G" ${group_file})
+
+	echo -e "\n${Green}[X] Checking ${group_file} file permission....${Reset}"
+
+	if [[ ${permission} == 644 ]]; then
+		echo -e "[✓] ${group_file} file permission is secure default (${permission}). No issue found."
+
+	else
+
+		echo -e "${Yellow}[WARN] ${group_file} file permissions appear to be tampered with (${permission})${Reset}"
+		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+
+		if [[ ${FIX_MODE} == true ]]; then
+			echo -e "\n[X] Using: chmod 644 ${group_file}"
+			chmod 644 ${group_file}
+
+			permission=$(stat -c "%a" "${group_file}")
+			echo "[FIXED] ${group_file} file permission set to default (${permission})"
+		fi
+	fi
+
+	if [[ ${owner} == "root:root" ]]; then
+		echo -e "\n[✓] ${group_file} file ownership is secure default (${owner}). No issue found."
+
+	else
+
+		echo -e "\n${Yellow}[WARN] ${group_file} file ownership appear to be tampered with (${owner})${Reset}"
+		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+
+		if [[ ${FIX_MODE} == true ]]; then
+			echo -e "\n[X] Using: chown root:root ${group_file}"
+			chown root:root ${group_file}
+
+			permission=$(stat -c "%a" "${group_file}")
+			echo "[FIXED] ${group_file} file ownership set to default (${permission})"
+		fi
+	fi
+
+}
+
+check_wheel_group_members() {
+	local group_file="/etc/group"
+
+	echo -e "\n${Green}[X] Checking wheel group members....${Reset}"
+
+	result=$(awk -F: '$1=="wheel"{print "[INFO] wheel members:", ($4 ? $4 : "None")}' /etc/group)
+	echo -e "\n${Yellow}[!] Review the above users carefully. Remove any unknown or unauthorized accounts.${Reset}"
+
+}
+
+check_privileged_groups() {
+	local group_file="/etc/group"
+
+	# High-risk admin groups
+	local privileged_groups=("wheel" "sudo" "adm" "shadow" "disk" "docker" "lxd" "libvirt" "kvm")
+
+	echo -e "\n${Green}[X] Checking privileged group memberships (FIX MODE only)....${Reset}"
+
+	for grp in "${privileged_groups[@]}"; do
+		awk -F: -v grp="$grp" -v FIX="$FIX_MODE" -v RED="$Red" -v YELLOW="$Yellow" -v GREEN="$Green" -v RESET="$Reset" '
+		$1 == grp && $4 != "" {
+			print RED "[CRITICAL] Privileged group detected: " grp RESET
+			n = split($4, users, ",")
+
+			for (i = 1; i <= n; i++) {
+				print YELLOW " - User: " users[i] RESET
+
+				if (FIX == "true") {
+					print "[X] Removing " users[i] " from " grp
+					system("gpasswd -d " users[i] " " grp " >/dev/null 2>&1")
+					print GREEN "[FIXED] " users[i] " removed from " grp RESET
+				}
+			}
+		}
+		' "$group_file"
+	done
+	echo -e "\n${Red}[CRITICAL] If any malicious or unauthorized users are found with privileged access, remove them immediately.${Reset}"
+
+}

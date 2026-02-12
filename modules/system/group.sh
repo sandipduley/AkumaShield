@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source "${SCRIPT_DIR}/lib/colors"
-
 run_group_module() {
 	check_gid_zero_groups
 	check_group_file_security

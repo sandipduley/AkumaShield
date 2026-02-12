@@ -1,0 +1,39 @@
+
+[X] Checking for GID 0 groups....
+[✓] Only root group has GID 0. No issues found.
+
+[X] Checking /etc/group file permission....
+[✓] /etc/group file permission is secure default (644). No issue found.
+
+[✓] /etc/group file ownership is secure default (root:root). No issue found.
+
+[X] Checking wheel group members....
+
+[!] Review the above users carefully. Remove any unknown or unauthorized accounts.
+
+[X] Checking privileged group memberships (FIX MODE only)....
+
+[CRITICAL] If any malicious or unauthorized users are found with privileged access, remove them immediately.
+
+[X] Checking malicious users on /etc/passwd file....
+[X] Printing non-system users from /etc/passwd (Username, UID, Shell)
+
+[✓] No suspicious non-system users found.
+
+[X] Checking for UID 0 accounts...
+[SECURE] Only root has UID 0. No issues found.
+
+[X] Checking /etc/passwd file permissions....
+[✓] /etc/passwd file permission is secure default (644). No issue found.
+
+[X] Checking /etc/passwd file ownership....
+[✓] /etc/passwd file is secure default (root:root). No issue found.
+-------------------------------------------------------------------------
+
+[X] Checking /etc/shadow file permissions....
+[✓] /etc/shadow file permission is secure default (600)
+
+[X] Checking /etc/shadow file ownership....
+[✓] /etc/shadow file is secure default (root:root)
+-------------------------------------------------------------------------
+[2026-02-12 12:20:12] [INFO] Scan completed successfully.

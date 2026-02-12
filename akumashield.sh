@@ -1,123 +1,117 @@
 #!/usr/bin/env bash
+
 set -o errexit
 set -o pipefail
+set -o nounset
 
-# Resolve AkumaShield root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Source libraries
-source "${SCRIPT_DIR}/lib/colors"
-# source "${SCRIPT_DIR}/lib/logger"
-
-# Source modules
-source "${SCRIPT_DIR}/modules/system/passwd"
-source "${SCRIPT_DIR}/modules/system/shadow"
-source "${SCRIPT_DIR}/modules/system/group"
-
-# Banner
-BANNER=$(
-	cat <<'EOF'
-
- ▗▖ ▐                ▄▄ ▐    ▝      ▝▜    ▐
- ▐▌ ▐ ▗ ▗ ▗ ▗▄▄  ▄▖ ▐▘ ▘▐▗▖ ▗▄   ▄▖  ▐   ▄▟
- ▌▐ ▐▗▘ ▐ ▐ ▐▐▐ ▝ ▐ ▝▙▄ ▐▘▐  ▐  ▐▘▐  ▐  ▐▘▜
- ▙▟ ▐▜  ▐ ▐ ▐▐▐ ▗▀▜   ▝▌▐ ▐  ▐  ▐▀▀  ▐  ▐ ▐
-▐  ▌▐ ▚ ▝▄▜ ▐▐▐ ▝▄▜ ▝▄▟▘▐ ▐ ▗▟▄ ▝▙▞  ▝▄ ▝▙█
-
-EOF
-)
-
-print_banner() {
-	echo -e "${Red}${BANNER}${Reset}"
-	echo -e "\n${Cyan}AkumaShield${Reset} — not yet another one-off hardening script"
-	echo -e "${Cyan}Author${Reset}: Sandip Duley\n"
-}
-
-# Global flags
-SHOW_HELP=false
-RUN_MODE=false
 FIX_MODE=false
-DRY_RUN=false
-ONLY_MODULES=""
+ONLY_MODULE=""
 
-# Argument parsing
-for arg in "$@"; do
-	case "$arg" in
-	-h | --help) SHOW_HELP=true ;;
-	--audit) RUN_MODE=true ;;
-	--fix) RUN_MODE=true FIX_MODE=true ;;
-	--dry-run) DRY_RUN=true ;;
-	--only=*) ONLY_MODULES="${arg#*=}" ;;
+# Load core libraries
+source "${SCRIPT_DIR}/lib/colors.sh"
+source "${SCRIPT_DIR}/lib/logger.sh"
+
+# ----------------------------------
+# Root Enforcement
+# ----------------------------------
+if [[ "${EUID}" -ne 0 ]]; then
+	log_critical "AkumaShield must be run as root."
+	exit 1
+fi
+
+# ----------------------------------
+# Argument Parsing
+# ----------------------------------
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--fix)
+		FIX_MODE=true
+		shift
+		;;
+	--only)
+		[[ -z "${2:-}" ]] && {
+			log_critical "--only requires a module name"
+			exit 1
+		}
+		ONLY_MODULE="$2"
+		shift 2
+		;;
+	-L)
+		LOG_ENABLED=true
+		shift
+		;;
+	-h | --help)
+		echo "Usage: ./akumashield.sh [--fix] [--only <module>] [-L]"
+		echo
+		echo "Options:"
+		echo "  --fix            Automatically fix detected issues"
+		echo "  --only <module>  Run specific module"
+		echo "  -L               Enable logging to file"
+		echo "  -h, --help       Show help"
+		exit 0
+		;;
 	*)
-		echo "[!] Unknown option: $arg"
+		log_critical "Unknown argument: $1"
 		exit 1
 		;;
 	esac
 done
 
-export FIX_MODE DRY_RUN ONLY_MODULES
+# ----------------------------------
+# Module Auto-Discovery
+# ----------------------------------
 
-print_help() {
-	cat <<EOF
-Usage: sudo ./akumashield.sh [OPTIONS]
+declare -A MODULE_MAP
 
-Modes:
-  --audit            Audit only
-  --fix              Audit + fix safe issues
+discover_modules() {
+	while IFS= read -r -d '' file; do
+		module_name="$(basename "$file" .sh)"
 
-Options:
-  --dry-run          Show actions without applying
-  --only=MODULES     Run only specific modules
-  -h, --help         Show help
+		# shellcheck source=/dev/null
+		source "$file"
 
-Example:
-  sudo ./akumashield.sh --audit
-  sudo ./akumashield.sh --fix --only=passwd
-EOF
+		MODULE_MAP["$module_name"]="run_${module_name}_module"
+	done < <(find "${SCRIPT_DIR}/modules" -type f -name "*.sh" -print0)
 }
 
-# Module runner
+# ----------------------------------
+# Module Execution
+# ----------------------------------
+
 run_modules() {
-	case "$ONLY_MODULES" in
-	"")
-		run_passwd_module
-		run_shadow_module
-		run_group_module
-		;;
-	# passwd)
-	# 	run_passwd_module
-	# 	;;
-	# shadow)
-	# 	run_shadow_module
-	# 	;;
-	*)
-		echo "[!] Unknown module: $ONLY_MODULES"
-		exit 1
-		;;
-	esac
+	if [[ -n "${ONLY_MODULE}" ]]; then
+		if [[ -n "${MODULE_MAP[$ONLY_MODULE]:-}" ]]; then
+			"${MODULE_MAP[$ONLY_MODULE]}"
+		else
+			log_critical "Module '${ONLY_MODULE}' not found."
+			exit 1
+		fi
+	else
+		for module in "${!MODULE_MAP[@]}"; do
+			"${MODULE_MAP[$module]}"
+		done
+	fi
 }
 
-# MAIN (ONLY EXECUTION POINT)
-main() {
+# ----------------------------------
+# Banner
+# ----------------------------------
 
-	if [[ "$SHOW_HELP" == true ]]; then
-		print_help
-		exit 0
-	fi
-
-	if [[ "$RUN_MODE" != true ]]; then
-		echo "[!] No execution mode selected"
-		exit 1
-	fi
-
-	print_banner
-
-	# log_init
-
-	run_modules
-
-	# echo "-------------------------------------------------------------------------"
-	# log_info "AkumaShield run completed successfully"
+print_banner() {
+	echo -e "${BGreen}"
+	echo "AkumaShield - Linux Audit & Hardening Framework"
+	echo -e "${Reset}"
 }
 
-main "$@"
+# ----------------------------------
+# Execution Flow
+# ----------------------------------
+
+print_banner
+init_logger
+discover_modules
+run_modules
+
+log_info "Scan completed successfully."

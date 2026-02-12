@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source "${SCRIPT_DIR}/lib/colors"
-
 # Module entry point
 run_shadow_module() {
 	check_shadow_permission

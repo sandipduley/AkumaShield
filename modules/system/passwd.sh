@@ -1,109 +1,100 @@
 #!/usr/bin/env bash
 
-# Module entry point
+# entry
 run_passwd_module() {
+	log_info "Running Passwd Security Module"
+
 	check_non_system_users
 	check_uid_zero_accounts
 	check_passwd_permission
 	check_passwd_ownership
 }
 
+# detect regular login users
 check_non_system_users() {
-	local passwd_file="/etc/passwd"
+	local file="/etc/passwd"
 
-	echo -e "\n${Green}[X] Checking malicious users on ${passwd_file} file....${Reset}"
-	echo -e "${Green}[X] Printing non-system users from ${passwd_file} (Username, UID, Shell)\n${Reset}"
+	log_info "Checking non-system users"
 
 	local result
-	result=$(awk -F: '$3 > 1000 && $7 != "/usr/bin/nologin" {
-        printf "[NON-SYSTEM USER] %-15s UID=%-5s SHELL=%s\n", $1, $3, $7
-    }' "$passwd_file")
+	result=$(awk -F: '$3 >= 1000 && $7 !~ /(nologin|false)$/ {
+		printf "User=%s UID=%s Shell=%s\n", $1, $3, $7
+	}' "$file")
 
-	if [[ -n "${result}" ]]; then
-		echo "${result}"
-		echo -e "\n${Yellow}[!] Review the above users carefully. Remove any unknown or unauthorized accounts.${Reset}"
+	if [[ -n "$result" ]]; then
+		log_warn "Non-system users detected"
+		while IFS= read -r line; do
+			log_info "$line"
+		done <<<"$result"
 	else
-		echo -e "[✓] No suspicious non-system users found."
+		log_secure "No suspicious non-system users found"
 	fi
 }
 
+# check uid 0 accounts
 check_uid_zero_accounts() {
-	local passwd_file="/etc/passwd"
+	local file="/etc/passwd"
 
-	echo -e "\n${Green}[X] Checking for UID 0 accounts...${Reset}"
+	log_info "Checking UID 0 accounts"
 
-	local uid0_count
-	uid0_count=$(awk -F: '$3 == 0 {count++} END {print count+0}' "$passwd_file")
+	local uid0_accounts
+	uid0_accounts=$(awk -F: '$3 == 0 {print $1}' "$file")
 
-	if [[ "${uid0_count}" -eq 0 ]]; then
-		echo -e "${Red}[CRITICAL] No UID 0 account found! System may be broken.${Reset}"
+	local count
+	count=$(wc -l <<<"$uid0_accounts")
+
+	if ((count == 0)); then
+		log_critical "No UID 0 account found"
 		return
 	fi
 
-	if [[ "${uid0_count}" -gt 1 ]]; then
-		echo -e "${Yellow}[WARNING] Multiple UID 0 accounts detected (${uid0_count})${Reset}"
-		awk -F: '$3 == 0 {print " - " $1}' "$passwd_file"
-	fi
-
-	local non_root_uid0
-	non_root_uid0=$(awk -F: '$3 == 0 && $1 != "root" {found=1} END {print found+0}' "$passwd_file")
-
-	if [[ "${non_root_uid0}" -eq 1 ]]; then
-		awk -F: -v RED="$Red" -v RESET="$Reset" '
-            $3 == 0 && $1 != "root" {
-                print RED "[CRITICAL] Non-root account with UID 0: " RESET $1
-            }
-        ' "$passwd_file"
+	if ((count > 1)); then
+		log_critical "Multiple UID 0 accounts detected ($count)"
+		while IFS= read -r user; do
+			[[ "$user" != "root" ]] && log_critical "Non-root UID 0 account: $user"
+		done <<<"$uid0_accounts"
 	else
-		echo -e "[SECURE] Only root has UID 0. No issues found."
+		log_secure "Only root has UID 0"
 	fi
 }
 
+# verify permissions
 check_passwd_permission() {
-	local passwd_file="/etc/passwd"
-	local permission
+	local file="/etc/passwd"
+	local perm
+	perm=$(stat -c "%a" "$file")
 
-	permission=$(stat -c "%a" "$passwd_file")
+	log_info "Checking /etc/passwd permissions"
 
-	echo -e "\n${Green}[X] Checking ${passwd_file} file permissions....${Reset}"
-
-	if [[ "${permission}" == "644" ]]; then
-		echo -e "[✓] ${passwd_file} file permission is secure default (${permission}). No issue found."
+	if [[ "$perm" == "644" ]]; then
+		log_secure "Permissions are secure (644)"
 	else
-		echo -e "${Yellow}[WARN] ${passwd_file} file permissions appear to be tampered with (${permission})${Reset}"
-		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+		log_warn "Permissions are $perm (expected 644)"
 
-		if [[ "${FIX_MODE}" == true ]]; then
-			echo -e "\n[X] Using: chmod 644 ${passwd_file}"
-			chmod 644 "${passwd_file}"
-
-			permission=$(stat -c "%a" "${passwd_file}")
-			echo -e "[FIXED] ${passwd_file} file permission set to default (${permission})"
+		if [[ "$FIX_MODE" == true ]]; then
+			chmod 644 "$file"
+			log_fixed "Permissions corrected to 644"
 		fi
 	fi
 }
 
+# verify ownership
 check_passwd_ownership() {
-	local passwd_file="/etc/passwd"
-	local passwd_owner passwd_group
+	local file="/etc/passwd"
+	local owner group
+	owner=$(stat -c "%U" "$file")
+	group=$(stat -c "%G" "$file")
 
-	passwd_owner=$(stat -c "%U" "$passwd_file")
-	passwd_group=$(stat -c "%G" "$passwd_file")
+	log_info "Checking /etc/passwd ownership"
 
-	echo -e "\n${Green}[X] Checking ${passwd_file} file ownership....${Reset}"
-
-	if [[ "${passwd_owner}" == "root" && "${passwd_group}" == "root" ]]; then
-		echo -e "[✓] ${passwd_file} file is secure default (${passwd_owner}:${passwd_group}). No issue found."
+	if [[ "$owner" == "root" && "$group" == "root" ]]; then
+		log_secure "Ownership is root:root"
 	else
-		echo -e "${Yellow}[WARN] Someone messed with the ${passwd_file} file ownership (${passwd_owner}:${passwd_group})${Reset}"
-		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+		log_warn "Ownership is $owner:$group (expected root:root)"
 
-		if [[ "${FIX_MODE}" == true ]]; then
-			chown root:root "${passwd_file}"
-			passwd_owner=$(stat -c "%U:%G" "${passwd_file}")
-			echo -e "\n[FIXED] ${passwd_file} file ownership set to default (${passwd_owner})"
+		if [[ "$FIX_MODE" == true ]]; then
+			chown root:root "$file"
+			log_fixed "Ownership corrected to root:root"
 		fi
 	fi
-
-	echo "-------------------------------------------------------------------------"
 }

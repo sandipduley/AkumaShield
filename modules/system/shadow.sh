@@ -1,60 +1,57 @@
 #!/usr/bin/env bash
 
-# Module entry point
+# entry
 run_shadow_module() {
+	log_info "Running Shadow Security Module"
+
 	check_shadow_permission
 	check_shadow_ownership
 }
 
+# verify permissions
 check_shadow_permission() {
-	local shadow_file="/etc/shadow"
+	local file="/etc/shadow"
+	local perm
 
-	local permission
-	permission=$(stat -c "%a" "${shadow_file}")
+	perm=$(stat -c "%a" "$file" 2>/dev/null) || {
+		log_critical "Unable to read $file"
+		return
+	}
 
-	echo -e "\n${Green}[X] Checking ${shadow_file} file permissions....${Reset}"
+	log_info "Checking /etc/shadow permissions"
 
-	if [[ ${permission} == 600 ]]; then
-		echo -e "[✓] ${shadow_file} file permission is secure default (${permission})"
+	if [[ "$perm" == "600" ]]; then
+		log_secure "Permissions are secure (600)"
 	else
-		echo -e "${Yellow}[WARN] ${shadow_file} file permissions appear to be tampered with (${permission})${Reset}"
-		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+		log_critical "Permissions are $perm (expected 600)"
 
-		if [[ ${FIX_MODE} == true ]]; then
-
-			chmod 600 ${shadow_file}
-			permission=$(stat -c "%a" "${shadow_file}")
-			echo -e "\n[FIXED] ${shadow_file} file permission set to default (${permission})"
+		if [[ "$FIX_MODE" == true ]]; then
+			chmod 600 "$file" && log_fixed "Permissions corrected to 600"
 		fi
 	fi
 }
 
+# verify ownership
 check_shadow_ownership() {
-	local shadow_file="/etc/shadow"
+	local file="/etc/shadow"
+	local owner group
 
-	local shadow_owner
-	shadow_owner=$(stat -c "%U" "${shadow_file}")
+	owner=$(stat -c "%U" "$file" 2>/dev/null) || {
+		log_critical "Unable to read $file owner"
+		return
+	}
 
-	local shadow_group
-	shadow_group=$(stat -c "%G" "${shadow_file}")
+	group=$(stat -c "%G" "$file")
 
-	echo -e "\n${Green}[X] Checking ${shadow_file} file ownership....${Reset}"
+	log_info "Checking /etc/shadow ownership"
 
-	if [[ ${shadow_owner} && ${shadow_group} == root ]]; then
-		echo -e "[✓] ${shadow_file} file is secure default (${shadow_owner}:${shadow_group})"
-
-		echo "-------------------------------------------------------------------------"
+	if [[ "$owner" == "root" && "$group" == "root" ]]; then
+		log_secure "Ownership is root:root"
 	else
-		echo -e "${Yellow}[WARN] Someone messed with the ${shadow_file} file ownership (${shadow_owner})${Reset}"
-		echo -e "${Red}[CRITICAL] Immediate attention required!${Reset}"
+		log_critical "Ownership is $owner:$group (expected root:root)"
 
-		if [[ ${FIX_MODE} == true ]]; then
-
-			chown root:root ${shadow_file}
-			shadow_owner=$(stat -c "%U" "${shadow_file}")
-			echo -e "\n[FIXED] ${shadow_file} file ownership set to default (${shadow_owner})"
-
-			echo "-------------------------------------------------------------------------"
+		if [[ "$FIX_MODE" == true ]]; then
+			chown root:root "$file" && log_fixed "Ownership corrected to root:root"
 		fi
 	fi
 }

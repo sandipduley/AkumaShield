@@ -78,6 +78,7 @@ run_modules() {
 	if [[ -n "${ONLY_MODULE}" ]]; then
 		if [[ -n "${MODULE_MAP[$ONLY_MODULE]:-}" ]]; then
 			"${MODULE_MAP[$ONLY_MODULE]}"
+			echo
 		else
 			log_critical "Module '${ONLY_MODULE}' not found."
 			exit 1
@@ -85,6 +86,7 @@ run_modules() {
 	else
 		for module in "${!MODULE_MAP[@]}"; do
 			"${MODULE_MAP[$module]}"
+			echo
 		done
 	fi
 }
@@ -104,4 +106,4 @@ init_logger
 discover_modules
 run_modules
 
-log_info "Scan completed successfully."
+echo "Scan completed successfully."

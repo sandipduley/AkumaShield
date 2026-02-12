@@ -13,17 +13,15 @@ ONLY_MODULE=""
 source "${SCRIPT_DIR}/lib/colors.sh"
 source "${SCRIPT_DIR}/lib/logger.sh"
 
-# ----------------------------------
 # Root Enforcement
-# ----------------------------------
+
 if [[ "${EUID}" -ne 0 ]]; then
 	log_critical "AkumaShield must be run as root."
 	exit 1
 fi
 
-# ----------------------------------
 # Argument Parsing
-# ----------------------------------
+
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	--fix)
@@ -59,9 +57,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-# ----------------------------------
 # Module Auto-Discovery
-# ----------------------------------
 
 declare -A MODULE_MAP
 
@@ -76,9 +72,7 @@ discover_modules() {
 	done < <(find "${SCRIPT_DIR}/modules" -type f -name "*.sh" -print0)
 }
 
-# ----------------------------------
 # Module Execution
-# ----------------------------------
 
 run_modules() {
 	if [[ -n "${ONLY_MODULE}" ]]; then
@@ -95,9 +89,7 @@ run_modules() {
 	fi
 }
 
-# ----------------------------------
 # Banner
-# ----------------------------------
 
 print_banner() {
 	echo -e "${BGreen}"
@@ -105,9 +97,7 @@ print_banner() {
 	echo -e "${Reset}"
 }
 
-# ----------------------------------
 # Execution Flow
-# ----------------------------------
 
 print_banner
 init_logger
